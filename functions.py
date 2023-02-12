@@ -27,7 +27,7 @@ def test_gram_schmidt():
     A_difference = np.sqrt(np.sum((M-(Q@R))**2)) #Does the produce of Q and R equal the original input matrix?
     return I_difference, A_difference
 
-def orthogonal_iteration(M, nsteps=20):
+def orthogonal_iteration(M, nsteps=30):
     A = M.astype(float)
     m,n = A.shape
     Q = np.identity(m) #eigenvectors
@@ -61,5 +61,34 @@ def test_orthogonal_iteration():
     print("The expected eigvals :", np.linalg.eigvals(M))
     S,X = orthogonal_iteration(M)
     print("The observed eigenvas:",  S)
+
+def svd(M):
+    A   = M.astype(float)
+    m,n = A.shape
+    ATA = np.dot(A.T, A)
+    S,V = orthogonal_iteration(ATA)
+    S   = np.sqrt(S)
+    AV  = np.dot(A,V)
+    U   = np.dot(AV, np.diag(1/S))
+    norms = np.dot( np.ones(shape=m), U**2) 
+    U     = np.dot(U, np.diag(1/norms))  #normalize
+    return U,S,V
+
+def test_svd():
+    np.random.seed(123)
+    m,n = 100,100
+    M=np.random.random(size=(m,n))*10
+    U,S,V = svd(M)
+    I_expected   = np.identity(m)
+    I_observed   = np.dot(U.T, U)  #Are the columns of U all orthogonal to each other?  Are they all length of 1?
+    I_difference = np.sqrt(np.sum((I_expected-I_observed)**2))
+    print("How close U is to orthonormal: ",I_difference)
+
+    I_expected   = np.identity(n)
+    I_observed   = np.dot(V.T, V)  #Are the columns of V all orthogonal to each other?  Are they all length of 1?
+    I_difference = np.sqrt(np.sum((I_expected-I_observed)**2))
+    print("How close V is to orthonormal: ",I_difference)
+
+    print("Reconstruction Error",np.sqrt(np.sum(((U@np.diag(S)@V.T) - M)**2)))
 
 print()
