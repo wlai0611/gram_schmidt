@@ -1,6 +1,6 @@
 import numpy as np
 import time
-#
+##
 def gram_schmidt(M):
     A   = M.astype(float)
     m,n = A.shape
