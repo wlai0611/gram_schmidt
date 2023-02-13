@@ -27,7 +27,7 @@ def test_gram_schmidt():
     A_difference = np.sqrt(np.sum((M-(Q@R))**2)) #Does the produce of Q and R equal the original input matrix?
     return I_difference, A_difference
 
-def orthogonal_iteration(M, nsteps=30):
+def orthogonal_iteration(M, nsteps=50):
     A = M.astype(float)
     m,n = A.shape
     Q = np.identity(m) #eigenvectors
@@ -68,27 +68,42 @@ def svd(M):
     ATA = np.dot(A.T, A)
     S,V = orthogonal_iteration(ATA)
     S   = np.sqrt(S)
-    AV  = np.dot(A,V)
-    U   = np.dot(AV, np.diag(1/S))
-    norms = np.dot( np.ones(shape=m), U**2) 
-    U     = np.dot(U, np.diag(1/norms))  #normalize
+    US  = np.dot(A,V)
+    U   = np.dot(US, np.diag(1/S))  #normalize
     return U,S,V
 
-def test_svd():
-    np.random.seed(123)
-    m,n = 100,100
-    M=np.random.random(size=(m,n))*10
-    U,S,V = svd(M)
-    I_expected   = np.identity(m)
-    I_observed   = np.dot(U.T, U)  #Are the columns of U all orthogonal to each other?  Are they all length of 1?
-    I_difference = np.sqrt(np.sum((I_expected-I_observed)**2))
-    print("How close U is to orthonormal: ",I_difference)
+def singular_value_decomposition(matrix, rank):
+    '''
+    Linear Algebra for Everyone by Gilbert Strang, page 260 calls the left singular vectors, the column space,
+    and the right singular vectors the row space.  I follow the same convention
+    '''
+    covariance      = np.dot(matrix.T, matrix)
+    eigenvalues, eigenvectors = orthogonal_iteration(covariance)
+    singular_values = eigenvalues**2
+    sorted_indices  = np.argsort(singular_values)[::-1]
+    biggest_singular_values = sorted_indices[:rank]
+    
+    row_space       = eigenvectors[:,biggest_singular_values].T #Eigenvectors Corresponding to Largest Eigenvalues
+    column_space    = np.dot(matrix, eigenvectors)              #Multiply every eigenvector by the matrix
+    column_space    = np.divide(column_space, singular_values)  
+    column_space    = column_space[:,biggest_singular_values]
+    return column_space, np.diag(biggest_singular_values), row_space    
 
-    I_expected   = np.identity(n)
-    I_observed   = np.dot(V.T, V)  #Are the columns of V all orthogonal to each other?  Are they all length of 1?
-    I_difference = np.sqrt(np.sum((I_expected-I_observed)**2))
-    print("How close V is to orthonormal: ",I_difference)
 
-    print("Reconstruction Error",np.sqrt(np.sum(((U@np.diag(S)@V.T) - M)**2)))
+np.random.seed(123)
+m,n = 100,100
+M=np.random.random(size=(m,n))*10
+U,S,V = svd(M)
+I_expected   = np.identity(m)
+I_observed   = np.dot(U.T, U)  #Are the columns of U all orthogonal to each other?  Are they all length of 1?
+I_difference = np.sqrt(np.sum((I_expected-I_observed)**2))
+print("How close U is to orthonormal: ",I_difference)
+
+I_expected   = np.identity(n)
+I_observed   = np.dot(V.T, V)  #Are the columns of V all orthogonal to each other?  Are they all length of 1?
+I_difference = np.sqrt(np.sum((I_expected-I_observed)**2))
+print("How close V is to orthonormal: ",I_difference)
+
+print("Reconstruction Error",np.sqrt(np.sum(((U@np.diag(S)@V.T) - M)**2)))
 
 print()
